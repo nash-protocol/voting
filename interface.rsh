@@ -4,10 +4,10 @@
 // Name: Interface Template
 // Description: NP Rapp simple
 // Author: Nicholas Shellabarger
-// Version: 0.0.3 - voting initial
+// Version: 0.0.4 - rename symbols
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
-export const Particpants = () => [
+export const Participants = () => [
   Participant('Alice', {
     getParams: Fun([], Object({
       secs: UInt
