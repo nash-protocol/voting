@@ -1,10 +1,10 @@
 'reach 0.1';
 'use strict';
 // -----------------------------------------------
-// Name: Interface Template
-// Description: NP Rapp simple
+// Name: Binary Voting Interface
+// Description:  Binary Voting NP Reach App
 // Author: Nicholas Shellabarger
-// Version: 0.0.4 - rename symbols
+// Version: 0.0.5 - use enum, refactor
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
@@ -28,8 +28,19 @@ export const Api = () => [
     touch: Fun([], Null)
   })
 ]
-const VOTE_YES = 1
-const VOTE_NO = 2
+
+const [
+  _,
+  VOTE_NONE,
+  VOTE_YES,
+  VOTE_NO
+] = makeEnum(3)
+
+const nextTally = (curr, last) => (as, expect) =>
+  curr != expect
+    ? as
+    : as + 1 + (last != expect ? 1 : 0)
+
 export const App = (map) => {
   const [ _, { tok }, [Alice, Relay], [v], [a]] = map
   Alice.only(() => {
@@ -59,25 +70,22 @@ export const App = (map) => {
       ((yn) => assume(true
         && lastConsensusSecs() < secs
         && yn != fromSome(votesM[this], 0)
-        && yn == 1 || yn == 2
+        && yn == VOTE_YES || yn == VOTE_NO
       )),
       ((_) => 0),
       ((yn, k) => {
-        const last = fromSome(votesM[this], 0)
+        const last = fromSome(votesM[this], VOTE_NONE)
         require(true
           && lastConsensusSecs() < secs
           && yn != last
           && yn == 1 || yn == 2)
-        const newAs = yn != VOTE_YES ? as
-          : as + 1 + (last != VOTE_YES ? 1 : 0)
-        const newBs = yn != VOTE_NO ? bs
-          : bs + 1 + (last != VOTE_NO ? 1 : 0)
+        const nextT = nextTally(yn, last)
         votesM[this] = yn
         k(null)
         return [
           true,
-          newAs,
-          newBs
+          nextT(as, VOTE_YES),
+          nextT(bs, VOTE_NO)
         ]}))
     .api(a.touch,
       (() => 0),
