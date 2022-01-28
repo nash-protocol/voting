@@ -4,7 +4,7 @@
 // Name: Binary Voting Interface
 // Description:  Binary Voting NP Reach App
 // Author: Nicholas Shellabarger
-// Version: 0.0.5 - use enum, refactor
+// Version: 0.0.6 - next func
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
@@ -36,10 +36,16 @@ const [
   VOTE_NO
 ] = makeEnum(3)
 
-const nextTally = (curr, last) => (as, expect) =>
-  curr != expect
-    ? as
-    : as + 1 + (last != expect ? 1 : 0)
+const next = (c, l) => 
+  c == l 
+    ? [0, 0]
+    : l == VOTE_NONE
+      ? c == VOTE_YES
+        ? [1, 0]
+        : [0, 1]
+      : c > l
+        ? [2, 1]
+        : [1, 2]
 
 export const App = (map) => {
   const [ _, { tok }, [Alice, Relay], [v], [a]] = map
@@ -73,19 +79,19 @@ export const App = (map) => {
         && yn == VOTE_YES || yn == VOTE_NO
       )),
       ((_) => 0),
-      ((yn, k) => {
-        const last = fromSome(votesM[this], VOTE_NONE)
+      ((c, k) => {
+        const l = fromSome(votesM[this], VOTE_NONE)
         require(true
           && lastConsensusSecs() < secs
-          && yn != last
-          && yn == 1 || yn == 2)
-        const nextT = nextTally(yn, last)
-        votesM[this] = yn
+          && c != l
+          && c == VOTE_YES || c == VOTE_NO)
+        const [na, nb] = next(c, l)
+        votesM[this] = c
         k(null)
         return [
           true,
-          nextT(as, VOTE_YES),
-          nextT(bs, VOTE_NO)
+          na == 2 ? (isub(int(Pos,as),+1)).i : as + na,
+          nb == 2 ? (isub(int(Pos,bs),+1)).i : bs + nb,
         ]}))
     .api(a.touch,
       (() => 0),
