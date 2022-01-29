@@ -159,7 +159,10 @@ const [, , infile] = process.argv;
     console.log(await getVote('yes'), await getVote('no'))
 
   })(accAlice, accBob, accs)
-
+  // TODO add first voter on expired session
+  // TODO add last voter on expired session
+  // TODO add attempts to close contract before end of session
+  // TODO add touch
   process.exit()
 
 })();
