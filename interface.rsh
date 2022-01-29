@@ -4,13 +4,14 @@
 // Name: Binary Voting Interface
 // Description:  Binary Voting NP Reach App
 // Author: Nicholas Shellabarger
-// Version: 0.0.7 - fix close
+// Version: 0.0.8 - add once
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
   Participant('Alice', {
     getParams: Fun([], Object({
-      secs: UInt
+      secs: UInt,
+      once: Bool
     }))
   }),
   Participant('Relay', {})
@@ -49,14 +50,13 @@ const next = (c, l) =>
         ? [2, 1]
         : [1, 2]
 
-// TODO: add option prevent changing vote
 // TODO: add start seconds for Voting sessions start in 2days 10hours ...
 export const App = (map) => {
   const [_, { tok }, [Alice, Relay], [v], [a]] = map
   Alice.only(() => {
-    const { secs } = declassify(interact.getParams())
+    const { secs, once } = declassify(interact.getParams())
   })
-  Alice.publish(secs)
+  Alice.publish(secs, once)
   Relay.set(Alice)
   v.yes.set(0)
   v.no.set(0)
@@ -81,8 +81,9 @@ export const App = (map) => {
     .api(a.vote,
       ((yn) => assume(true
         && lastConsensusSecs() < secs
-        && yn != fromSome(votesM[this], 0)
+        && yn != fromSome(votesM[this], VOTE_NONE)
         && yn == VOTE_YES || yn == VOTE_NO
+        && (!once || fromSome(votesM[this], VOTE_NONE) == VOTE_NONE)
       )),
       ((_) => 0),
       ((c, k) => {
@@ -90,7 +91,9 @@ export const App = (map) => {
         require(true
           && lastConsensusSecs() < secs
           && c != l
-          && c == VOTE_YES || c == VOTE_NO)
+          && c == VOTE_YES || c == VOTE_NO
+          && (!once || l == VOTE_NONE)
+        )
         const [na, nb] = next(c, l)
         votesM[this] = c
         k(null)
