@@ -4,13 +4,14 @@
 // Name: Binary Voting Interface
 // Description:  Binary Voting NP Reach App
 // Author: Nicholas Shellabarger
-// Version: 0.0.8 - add once
+// Version: 0.0.9 - add start/end secs
 // Requires Reach v0.1.7 (stable)
 // ----------------------------------------------
 export const Participants = () => [
   Participant('Alice', {
     getParams: Fun([], Object({
-      secs: UInt,
+      startSecs: UInt,
+      endSecs: UInt,
       once: Bool
     }))
   }),
@@ -21,6 +22,7 @@ export const Views = () => [
     yes: UInt,
     no: UInt,
     closed: Bool, // common
+    startSecs: UInt, // common
     endSecs: UInt // common
   })
 ]
@@ -40,12 +42,14 @@ const [
 ] = makeEnum(3)
 
 const next = (c, l) =>
-  c == l
+  c == l 
     ? [0, 0]
     : l == VOTE_NONE
       ? c == VOTE_YES
         ? [1, 0]
-        : [0, 1]
+        : c == VOTE_NO 
+          ? [0, 0]
+          : [0, 1]
       : c > l
         ? [2, 1]
         : [1, 2]
@@ -54,14 +58,17 @@ const next = (c, l) =>
 export const App = (map) => {
   const [_, { tok }, [Alice, Relay], [v], [a]] = map
   Alice.only(() => {
-    const { secs, once } = declassify(interact.getParams())
+    const { startSecs, endSecs, once } = declassify(interact.getParams())
+    assume(startSecs < endSecs)
   })
-  Alice.publish(secs, once)
+  Alice.publish(startSecs, endSecs, once)
+  require(startSecs < endSecs)
   Relay.set(Alice)
   v.yes.set(0)
   v.no.set(0)
   v.closed.set(false)
-  v.endSecs.set(secs)
+  v.startSecs.set(startSecs)
+  v.endSecs.set(endSecs)
   const votesM = new Map(UInt)
   const [
     keepGoing,
@@ -80,7 +87,8 @@ export const App = (map) => {
     .while(keepGoing)
     .api(a.vote,
       ((yn) => assume(true
-        && lastConsensusSecs() < secs
+        && lastConsensusSecs() > startSecs
+        && lastConsensusSecs() < endSecs
         && yn != fromSome(votesM[this], VOTE_NONE)
         && yn == VOTE_YES || yn == VOTE_NO
         && (!once || fromSome(votesM[this], VOTE_NONE) == VOTE_NONE)
@@ -89,19 +97,33 @@ export const App = (map) => {
       ((c, k) => {
         const l = fromSome(votesM[this], VOTE_NONE)
         require(true
-          && lastConsensusSecs() < secs
+          && lastConsensusSecs() > startSecs
+          && lastConsensusSecs() < endSecs
           && c != l
           && c == VOTE_YES || c == VOTE_NO
           && (!once || l == VOTE_NONE)
         )
-        const [na, nb] = next(c, l)
-        votesM[this] = c
         k(null)
-        return [
-          true,
-          na == 2 ? (isub(int(Pos, as), +1)).i : as + na,
-          nb == 2 ? (isub(int(Pos, bs), +1)).i : bs + nb,
-        ]
+        if(true
+          && lastConsensusSecs() > startSecs
+          && lastConsensusSecs() < endSecs
+          && c != l
+          && c == VOTE_YES || c == VOTE_NO
+          && (!once || l == VOTE_NONE)) {
+          const [na, nb] = next(c, l)
+          votesM[this] = c
+          return [
+            true,
+            na == 2 ? (isub(int(Pos, as), +1)).i : as + na,
+            nb == 2 ? (isub(int(Pos, bs), +1)).i : bs + nb,
+          ]
+        } else {
+          return [
+            true,
+            as,
+            bs
+          ]
+        }
       }))
     .api(a.touch,
       (() => 0),
@@ -115,12 +137,12 @@ export const App = (map) => {
       }))
     .api(a.close,
       (() => assume(true
-        && lastConsensusSecs() >= secs
+        && lastConsensusSecs() >= endSecs
       )),
       (() => 0),
       ((k) => {
         require(true
-          && lastConsensusSecs() >= secs)
+          && lastConsensusSecs() >= endSecs)
         k(null)
         return [
           false,

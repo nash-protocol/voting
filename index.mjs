@@ -115,7 +115,8 @@ const [, , infile] = process.argv;
       backend.Contractee(ctc2, {}),
       backend.Alice(ctc2, {
         getParams: () => ({
-          secs: new Date().getTime() * 2,
+          startSecs: 0,
+          endSecs: new Date().getTime() * 2,
           once: false,
         }),
       }),
@@ -124,36 +125,33 @@ const [, , infile] = process.argv;
     const getVote = getVoteHelper(ctc);
     const voteAlice = voteHelper(ctc);
     const voteBob = voteHelper(ctc2);
-    // alice before voting
     console.log(await getVote("yes"), await getVote("no"));
     assert.equal(await getVote("yes"), 0);
     assert.equal(await getVote("no"), 0);
-    // alice votes yes
-    await voteAlice("yes").catch(console.dir);
+    await voteAlice("yes").catch(() => {})
     console.log(await getVote("yes"), await getVote("no"));
     assert.equal(await getVote("yes"), 1);
     assert.equal(await getVote("no"), 0);
-    // alice updates vote to no
-    await voteAlice("no").catch(console.dir);
+    await voteAlice("no").catch(() => {})
     console.log(await getVote("yes"), await getVote("no"));
-    assert.equal(await getVote('yes'), 0)
-    assert.equal(await getVote('no'), 1)
-    await voteBob("yes").catch(console.dir);
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 1);
+    await voteBob("yes").catch(() => {})
     console.log(await getVote("yes"), await getVote("no"));
-    assert.equal(await getVote('yes'), 1)
-    assert.equal(await getVote('no'), 1)
-    await voteBob("no").catch(console.dir);
+    assert.equal(await getVote("yes"), 1);
+    assert.equal(await getVote("no"), 1);
+    await voteBob("no").catch(() => {})
     console.log(await getVote("yes"), await getVote("no"));
-    assert.equal(await getVote('yes'), 0)
-    assert.equal(await getVote('no'), 2)
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 2);
     for (let i in accs) {
       let acc = accs[i];
       const ctc = acc.contract(backend, appId);
       const vote = voteHelper(ctc);
       if (Math.round(Math.random()) + 1 > 1) {
-        await vote("no").catch(console.dir);
+        await vote("no").catch(() => {})
       } else {
-        await vote("yes").catch(console.dir);
+        await vote("yes").catch(() => {})
       }
     }
     stdlib.wait(100);
@@ -178,7 +176,8 @@ const [, , infile] = process.argv;
       backend.Contractee(ctc2, {}),
       backend.Alice(ctc2, {
         getParams: () => ({
-          secs: new Date().getTime() * 2,
+          startSecs: 0,
+          endSecs: new Date().getTime() * 2,
           once: true,
         }),
       }),
@@ -187,36 +186,347 @@ const [, , infile] = process.argv;
     const getVote = getVoteHelper(ctc);
     const voteAlice = voteHelper(ctc);
     const voteBob = voteHelper(ctc2);
-    // alice before voting
     console.log(await getVote("yes"), await getVote("no"));
     assert.equal(await getVote("yes"), 0);
     assert.equal(await getVote("no"), 0);
-    // alice votes yes
-    await voteAlice("yes")
+    await voteAlice("yes").catch(() => {});
     console.log(await getVote("yes"), await getVote("no"));
     assert.equal(await getVote("yes"), 1);
     assert.equal(await getVote("no"), 0);
-    // alice updates vote to no
-    await voteAlice("no").catch(()=>{})
+    await voteAlice("no").catch(() => {});
     console.log(await getVote("yes"), await getVote("no"));
-    assert.equal(await getVote('yes'), 1)
-    assert.equal(await getVote('no'), 0)
-    await voteBob("yes")
+    assert.equal(await getVote("yes"), 1);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("yes").catch(() => {});
     console.log(await getVote("yes"), await getVote("no"));
-    assert.equal(await getVote('yes'), 2)
-    assert.equal(await getVote('no'), 0)
-    await voteBob("no").catch(()=>{})
+    assert.equal(await getVote("yes"), 2);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("no").catch(() => {});
     console.log(await getVote("yes"), await getVote("no"));
-    assert.equal(await getVote('yes'), 2)
-    assert.equal(await getVote('no'), 0)
+    assert.equal(await getVote("yes"), 2);
+    assert.equal(await getVote("no"), 0);
     for (let i in accs) {
       let acc = accs[i];
       const ctc = acc.contract(backend, appId);
       const vote = voteHelper(ctc);
       if (Math.round(Math.random()) + 1 > 1) {
-        await vote("no")
+        await vote("no").catch(() => {});
       } else {
-        await vote("yes")
+        await vote("yes").catch(() => {});
+      }
+    }
+    stdlib.wait(100);
+    console.log(await getVote("yes"), await getVote("no"));
+  })(accAlice, accBob, accs);
+
+  // alice can vote yes
+  console.log("CAN NOT VOTE");
+  await (async (acc, acc2, accs) => {
+    let addr = acc.networkAccount.addr;
+    let ctc = acc.contract(backend);
+    Promise.all([
+      backend.Constructor(ctc, {
+        getParams: () => getParams(addr),
+        signal,
+      }),
+    ]);
+    let appId = await ctc.getInfo();
+    console.log(appId);
+    let ctc2 = acc2.contract(backend, appId);
+    Promise.all([
+      backend.Contractee(ctc2, {}),
+      backend.Alice(ctc2, {
+        getParams: () => ({
+          startSecs: 0,
+          endSecs: 1,
+          once: true,
+        }),
+      }),
+    ]);
+    await stdlib.wait(100);
+    const getVote = getVoteHelper(ctc);
+    const voteAlice = voteHelper(ctc);
+    const voteBob = voteHelper(ctc2);
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("yes").catch(() => {})
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    for (let i in accs) {
+      let acc = accs[i];
+      const ctc = acc.contract(backend, appId);
+      const vote = voteHelper(ctc);
+      if (Math.round(Math.random()) + 1 > 1) {
+        await vote("no").catch(() => {});
+      } else {
+        await vote("yes").catch(() => {});
+      }
+    }
+    stdlib.wait(100);
+    console.log(await getVote("yes"), await getVote("no"));
+  })(accAlice, accBob, accs);
+
+  console.log("CAN NOT VOTE ONCE");
+  await (async (acc, acc2, accs) => {
+    let addr = acc.networkAccount.addr;
+    let ctc = acc.contract(backend);
+    Promise.all([
+      backend.Constructor(ctc, {
+        getParams: () => getParams(addr),
+        signal,
+      }),
+    ]);
+    let appId = await ctc.getInfo();
+    console.log(appId);
+    let ctc2 = acc2.contract(backend, appId);
+    Promise.all([
+      backend.Contractee(ctc2, {}),
+      backend.Alice(ctc2, {
+        getParams: () => ({
+          startSecs: 0,
+          endSecs: 1,
+          once: false
+        }),
+      }),
+    ]);
+    await stdlib.wait(100);
+    //await ctc.a.touch();
+    const getVote = getVoteHelper(ctc);
+    const voteAlice = voteHelper(ctc);
+    const voteBob = voteHelper(ctc2);
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    for (let i in accs) {
+      let acc = accs[i];
+      const ctc = acc.contract(backend, appId);
+      const vote = voteHelper(ctc);
+      if (Math.round(Math.random()) + 1 > 1) {
+        await vote("no").catch(() => {});
+      } else {
+        await vote("yes").catch(() => {});
+      }
+    }
+    stdlib.wait(100);
+    console.log(await getVote("yes"), await getVote("no"));
+  })(accAlice, accBob, accs);
+
+  console.log("CAN NOT VOTE SESSION ENDED");
+  await (async (acc, acc2, accs) => {
+    let addr = acc.networkAccount.addr;
+    let ctc = acc.contract(backend);
+    Promise.all([
+      backend.Constructor(ctc, {
+        getParams: () => getParams(addr),
+        signal,
+      }),
+    ]);
+    let appId = await ctc.getInfo();
+    console.log(appId);
+    let ctc2 = acc2.contract(backend, appId);
+    let secs = stdlib.bigNumberToNumber(await stdlib.getNetworkSecs())
+    console.log(secs)
+    console.log(Math.round(new Date().getTime()/1000))
+    Promise.all([
+      backend.Contractee(ctc2, {}),
+      backend.Alice(ctc2, {
+        getParams: () => ({
+          startSecs: 0,
+          endSecs: secs,
+          once: false
+        }),
+      }),
+    ]);
+    await stdlib.wait(100);
+    await ctc.a.touch();
+    const getVote = getVoteHelper(ctc);
+    const voteAlice = voteHelper(ctc);
+    const voteBob = voteHelper(ctc2);
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    for (let i in accs) {
+      let acc = accs[i];
+      const ctc = acc.contract(backend, appId);
+      const vote = voteHelper(ctc);
+      if (Math.round(Math.random()) + 1 > 1) {
+        await vote("no").catch(() => {});
+      } else {
+        await vote("yes").catch(() => {});
+      }
+    }
+    stdlib.wait(100);
+    console.log(await getVote("yes"), await getVote("no"));
+  })(accAlice, accBob, accs);
+
+  console.log("CAN NOT VOTE SESSION NOT STARTED");
+  await (async (acc, acc2, accs) => {
+    let addr = acc.networkAccount.addr;
+    let ctc = acc.contract(backend);
+    Promise.all([
+      backend.Constructor(ctc, {
+        getParams: () => getParams(addr),
+        signal,
+      }),
+    ]);
+    let appId = await ctc.getInfo();
+    console.log(appId);
+    let ctc2 = acc2.contract(backend, appId);
+    let secs = stdlib.bigNumberToNumber(await stdlib.getNetworkSecs())
+    console.log(secs)
+    Promise.all([
+      backend.Contractee(ctc2, {}),
+      backend.Alice(ctc2, {
+        getParams: () => ({
+          startSecs: secs + 3600,
+          endSecs: secs + 7200,
+          once: false
+        }),
+      }),
+    ]);
+    await stdlib.wait(100);
+    await ctc.a.touch();
+    const getVote = getVoteHelper(ctc);
+    const voteAlice = voteHelper(ctc);
+    const voteBob = voteHelper(ctc2);
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteBob("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    for (let i in accs) {
+      let acc = accs[i];
+      const ctc = acc.contract(backend, appId);
+      const vote = voteHelper(ctc);
+      if (Math.round(Math.random()) + 1 > 1) {
+        await vote("no").catch(() => {});
+      } else {
+        await vote("yes").catch(() => {});
+      }
+    }
+    stdlib.wait(100);
+    console.log(await getVote("yes"), await getVote("no"));
+  })(accAlice, accBob, accs);
+
+
+  console.log("CAN VOTE IN SESSION");
+  await (async (acc, acc2, accs) => {
+    let addr = acc.networkAccount.addr;
+    let ctc = acc.contract(backend);
+    Promise.all([
+      backend.Constructor(ctc, {
+        getParams: () => getParams(addr),
+        signal,
+      }),
+    ]);
+    let appId = await ctc.getInfo();
+    console.log(appId);
+    let ctc2 = acc2.contract(backend, appId);
+    let secs = stdlib.bigNumberToNumber(await stdlib.getNetworkSecs())
+    console.log(secs)
+    Promise.all([
+      backend.Contractee(ctc2, {}),
+      backend.Alice(ctc2, {
+        getParams: () => ({
+          startSecs: secs + 3600,
+          endSecs: secs + 7200,
+          once: false
+        }),
+      }),
+    ]);
+    await stdlib.waitUntilSecs(secs + 3600)
+    await stdlib.wait(100);
+    await ctc.a.touch();
+    const getVote = getVoteHelper(ctc);
+    const voteAlice = voteHelper(ctc);
+    const voteBob = voteHelper(ctc2);
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 1);
+    assert.equal(await getVote("no"), 0);
+    await voteAlice("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 1);
+    await voteBob("yes").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 1);
+    assert.equal(await getVote("no"), 1);
+    await voteBob("no").catch(() => {});
+    console.log(await getVote("yes"), await getVote("no"));
+    assert.equal(await getVote("yes"), 0);
+    assert.equal(await getVote("no"), 2);
+    for (let i in accs) {
+      let acc = accs[i];
+      const ctc = acc.contract(backend, appId);
+      const vote = voteHelper(ctc);
+      if (Math.round(Math.random()) + 1 > 1) {
+        await vote("no").catch(() => {});
+      } else {
+        await vote("yes").catch(() => {});
       }
     }
     stdlib.wait(100);
