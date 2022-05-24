@@ -56,7 +56,7 @@ const next = (c, l) =>
 
 // TODO: add start seconds for Voting sessions start in 2days 10hours ...
 export const App = (map) => {
-  const [_, { tok }, [Alice, Relay], [v], [a]] = map
+  const [_, [Alice, Relay], [v], [a]] = map
   Alice.only(() => {
     const { startSecs, endSecs, once } = declassify(interact.getParams())
     assume(startSecs < endSecs)
@@ -83,7 +83,7 @@ export const App = (map) => {
       v.yes.set(as)
       v.no.set(bs)
     })
-    .invariant(balance() == 0 && balance(tok) == 0)
+    .invariant(balance() == 0)
     .while(keepGoing)
     .api(a.vote,
       ((yn) => assume(true

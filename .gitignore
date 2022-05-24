@@ -1,3 +1,7 @@
 reach
 .reach
 np.sh
+build
+.vscode
+.env
+.DS_Store
